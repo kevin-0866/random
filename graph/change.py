@@ -37,17 +37,25 @@ class CodeAnalyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_Assign(self, node):
-        if isinstance(node.targets[0], ast.Name):
-            var_name = node.targets[0].id
-            if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name):
-                self.var_types[var_name] = node.value.func.id
-            elif isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute):
-                class_name = node.value.func.value.id
-                method_name = node.value.func.attr
-                self.var_types[var_name] = f"{class_name}.{method_name}"
+def visit_Assign(self, node):
+    if isinstance(node.targets[0], ast.Name):
+        var_name = node.targets[0].id
+        call_node = node.value
 
-        self.generic_visit(node)
+        if isinstance(call_node, ast.Call):
+            # Simple constructor: obj = MyClass()
+            if isinstance(call_node.func, ast.Name):
+                class_name = call_node.func.id
+                self.var_types[var_name] = class_name
+
+            # Attribute constructor: obj = module.MyClass()
+            elif isinstance(call_node.func, ast.Attribute):
+                if isinstance(call_node.func.value, ast.Name):
+                    module_name = call_node.func.value.id
+                    class_name = call_node.func.attr
+                    self.var_types[var_name] = f"{module_name}.{class_name}"
+    self.generic_visit(node)
+
 
     def visit_Attribute(self, node):
         if isinstance(node.ctx, ast.Load):
