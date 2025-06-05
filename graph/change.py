@@ -57,16 +57,31 @@ def visit_Assign(self, node):
     self.generic_visit(node)
 
 
-    def visit_Attribute(self, node):
-        if isinstance(node.ctx, ast.Load):
-            if isinstance(node.value, ast.Name):
-                var_name = node.value.id
-                if var_name in self.var_types:
-                    class_name, method_name = self.var_types[var_name].split(".")
-                    if class_name in self.class_methods and method_name in self.class_methods[class_name]:
-                        self.func_calls[var_name].append(method_name)
+def visit_Attribute(self, node):
+    if isinstance(node.ctx, ast.Load):
+        if isinstance(node.value, ast.Name):
+            var_name = node.value.id
+            attr_name = node.attr  # The method or attribute being accessed
 
-        self.generic_visit(node)
+            if var_name in self.var_types:
+                type_info = self.var_types[var_name]
+
+                # Handle both "MyClass" and "a.MyClass"
+                if "." in type_info:
+                    _, class_name = type_info.split(".")
+                else:
+                    class_name = type_info
+
+                # Check if attr_name is a method of the class
+                if class_name in self.class_methods:
+                    if attr_name in self.class_methods[class_name]:
+                        # Treat as a function call on a known class method
+                        if class_name not in self.func_calls:
+                            self.func_calls[class_name] = []
+                        self.func_calls[class_name].append(attr_name)
+
+    self.generic_visit(node)
+
 
     def analyze(self, file_name):
         with open(file_name, "r") as file:
