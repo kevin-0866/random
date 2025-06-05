@@ -87,3 +87,30 @@ def visit_Attribute(self, node):
         with open(file_name, "r") as file:
             tree = ast.parse(file.read(), filename=file_name)
             self.visit(tree)
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+from io import StringIO
+
+# URL of the page
+url = "https://sqimway.com/lte_band.php"
+
+# Fetch the HTML content
+response = requests.get(url)
+soup = BeautifulSoup(response.content, "html.parser")
+
+# Find the target table (the first one in this case)
+tables = soup.find_all("table")
+target_table = tables[0]
+
+# Convert the HTML table to a string and wrap in StringIO
+html_str = str(target_table)
+html_io = StringIO(html_str)
+
+# Now use pandas to read the HTML without warning
+dfs = pd.read_html(html_io)
+lte_band_df = dfs[0]
+
+# Display and optionally save
+print(lte_band_df.head())
+lte_band_df.to_csv("lte_bands.csv", index=False)
